@@ -3,161 +3,611 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhisperLinux — Offline Dictation for Linux</title>
-  <meta name="description" content="Free, offline push-to-talk dictation for Linux. Hold a hotkey, speak, get text typed anywhere.">
+  <title>Whispr Linux — Offline Voice Dictation for Linux</title>
+  <meta name="description" content="Free, offline push-to-talk dictation for Linux. Hold a hotkey, speak, get text typed anywhere. Local Whisper AI, X11 & Wayland, no cloud.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b0d12;
-      --surface: #141824;
-      --text: #eef1f8;
-      --muted: #9aa3b5;
-      --accent: #7c6cff;
-      --accent-2: #a78bfa;
-      --border: #252b3a;
+      --bg: #0c0c0c;
+      --bg-panel: #161616;
+      --bg-elevated: #1e1e1e;
+      --border: #2a2a2a;
+      --border-bright: #3d3d3d;
+      --text: #e4e4e4;
+      --text-dim: #8b8b8b;
+      --text-muted: #5c5c5c;
+      --green: #33d17a;
+      --green-dim: #26a269;
+      --cyan: #62a0ea;
+      --yellow: #e5a50a;
+      --red: #ed333b;
+      --purple: #c061cb;
+      --orange: #ff7800;
+      --prompt: #33d17a;
+      --cursor: #33d17a;
+      --radius: 8px;
+      --max: 960px;
+      --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "Fira Code", monospace;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
-      background: radial-gradient(1200px 600px at 20% -10%, rgba(124,108,255,.25), transparent),
-                  radial-gradient(900px 500px at 90% 0%, rgba(167,139,250,.15), transparent),
-                  var(--bg);
+      font-family: var(--mono);
+      background: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
+      font-size: 14px;
+      overflow-x: hidden;
     }
-    .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
-    header { display: flex; align-items: center; gap: 16px; margin-bottom: 48px; }
-    header svg { width: 48px; height: 48px; }
-    h1 { font-size: 2.4rem; letter-spacing: -0.03em; }
-    .tagline { color: var(--muted); font-size: 1.15rem; margin-top: 8px; max-width: 640px; }
-    .hero { margin: 40px 0 56px; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 48px; }
-    .card {
-      background: var(--surface);
+
+    ::selection { background: rgba(51, 209, 122, 0.25); }
+
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.03) 2px,
+        rgba(0, 0, 0, 0.03) 4px
+      );
+    }
+
+    .shell { position: relative; z-index: 1; max-width: var(--max); margin: 0 auto; padding: 0 20px; }
+
+    /* ── Window chrome ── */
+    .term-window {
+      background: var(--bg-panel);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
     }
-    .card h2 { font-size: 1.1rem; margin-bottom: 8px; }
-    .card p { color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; }
-    .btn {
-      display: inline-block;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: #fff;
+
+    .term-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .dot.r { background: var(--red); }
+    .dot.y { background: var(--yellow); }
+    .dot.g { background: var(--green); }
+
+    .term-title {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-right: 44px;
+    }
+
+    .term-body { padding: 20px; }
+
+    /* ── Nav ── */
+    nav { padding: 24px 0 0; }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       text-decoration: none;
-      font-weight: 600;
-      padding: 12px 20px;
-      border-radius: 10px;
-      transition: transform .15s, opacity .15s;
+      color: inherit;
     }
-    .btn:hover { transform: translateY(-1px); opacity: .95; }
-    .btn.secondary {
-      background: transparent;
+
+    .brand-icon { color: var(--green); font-size: 1.1rem; }
+    .brand-name { font-weight: 700; font-size: 0.95rem; }
+    .brand-name span { color: var(--green); }
+
+    .nav-links { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .nav-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.82rem;
+      padding: 6px 12px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      transition: color .15s, border-color .15s;
+    }
+    .nav-links a:hover { color: var(--text); border-color: var(--border); }
+
+    /* ── Prompt / terminal text ── */
+    .prompt::before {
+      content: "user@linux:~$ ";
+      color: var(--prompt);
+      font-weight: 500;
+    }
+
+    .prompt-root::before {
+      content: "root@linux:~# ";
+      color: var(--red);
+      font-weight: 500;
+    }
+
+    .comment { color: var(--text-muted); }
+    .cmd { color: var(--cyan); }
+    .flag { color: var(--purple); }
+    .str { color: var(--yellow); }
+    .ok { color: var(--green); }
+    .dim { color: var(--text-dim); }
+    .hl { color: var(--green); font-weight: 600; }
+
+    .cursor-blink::after {
+      content: "▋";
+      color: var(--cursor);
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border-bright);
+      background: var(--bg-elevated);
+      color: var(--text);
+      cursor: pointer;
+      text-decoration: none;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 4px;
+      transition: border-color .15s, background .15s;
+    }
+    .btn:hover { border-color: var(--green); background: rgba(51, 209, 122, 0.08); }
+    .btn-primary {
+      background: rgba(51, 209, 122, 0.12);
+      border-color: var(--green);
+      color: var(--green);
+    }
+    .btn-primary:hover { background: rgba(51, 209, 122, 0.2); }
+
+    /* ── Hero ── */
+    .hero { padding: 32px 0 48px; }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .hero-intro { margin-bottom: 20px; }
+    .hero-intro h1 {
+      font-size: clamp(1.4rem, 3.5vw, 1.85rem);
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 12px;
+    }
+    .hero-intro h1 .green { color: var(--green); }
+    .hero-intro p { color: var(--text-dim); font-size: 0.88rem; line-height: 1.7; }
+
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+    .tag {
+      font-size: 0.72rem;
+      padding: 4px 8px;
       border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-dim);
+    }
+    .tag.on { border-color: rgba(51, 209, 122, 0.4); color: var(--green); }
+
+    .hero-output { font-size: 0.82rem; }
+    .hero-output .line { margin-bottom: 6px; }
+    .hero-output .output-block {
+      margin: 12px 0;
+      padding: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-dim);
+      line-height: 1.65;
+    }
+    .hero-output .output-block.result { color: var(--text); border-color: rgba(51, 209, 122, 0.25); }
+    .key {
+      display: inline-block;
+      padding: 2px 6px;
+      border: 1px solid var(--border-bright);
+      border-radius: 3px;
+      background: var(--bg-elevated);
+      font-size: 0.75rem;
       color: var(--text);
     }
-    section { margin-bottom: 48px; }
-    section h2 { font-size: 1.4rem; margin-bottom: 16px; }
-    pre {
-      background: var(--surface);
+
+    /* ── Sections ── */
+    section { padding-bottom: 48px; }
+
+    .section-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    .section-head { margin-bottom: 20px; }
+    .section-head h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+    .section-head h2 .green { color: var(--green); }
+    .section-head p { color: var(--text-dim); font-size: 0.85rem; }
+
+    /* ── Install ── */
+    .code-block {
+      position: relative;
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px 20px;
+      border-radius: 4px;
+      padding: 14px 52px 14px 14px;
+      margin-bottom: 12px;
       overflow-x: auto;
-      font-size: 0.9rem;
-      color: #c8d0e0;
     }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    ol, ul { padding-left: 20px; color: var(--muted); }
-    li { margin-bottom: 8px; }
-    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-    .feature {
-      background: rgba(255,255,255,.03);
+    .code-block code {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      white-space: pre;
+      color: var(--text);
+    }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--bg-elevated);
+      color: var(--text-dim);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      cursor: pointer;
     }
-    .feature strong { display: block; color: var(--text); margin-bottom: 4px; }
-    footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 24px; }
+    .copy-btn:hover { color: var(--green); border-color: var(--green); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+    .install-note { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 12px; }
+    .install-note strong { color: var(--text); }
+
+    .download-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 16px;
+    }
+
+    /* ── Features (man page style) ── */
+    .man-page { font-size: 0.82rem; }
+    .man-page .man-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+    .man-page .man-synopsis {
+      color: var(--text-dim);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .man-section { margin-bottom: 20px; }
+    .man-section h3 {
+      color: var(--green);
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .man-section p { color: var(--text-dim); margin-bottom: 8px; line-height: 1.65; }
+    .man-list { list-style: none; }
+    .man-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+    .man-list li:last-child { border-bottom: none; }
+    .man-list li strong { color: var(--cyan); font-weight: 500; }
+
+    /* ── Steps ── */
+    .steps { display: grid; gap: 12px; }
+    .step {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      padding: 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    .step-num {
+      color: var(--green);
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding-top: 2px;
+    }
+    .step h3 { font-size: 0.85rem; margin-bottom: 4px; }
+    .step p { color: var(--text-dim); font-size: 0.82rem; }
+
+    /* ── CTA ── */
+    .cta { padding-bottom: 56px; }
+    .cta-inner { text-align: center; }
+    .cta-inner h2 { font-size: 1.1rem; margin-bottom: 8px; }
+    .cta-inner p { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px; }
+
+    /* ── Footer ── */
+    footer {
+      padding: 20px 0 40px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .term-title { margin-right: 0; font-size: 11px; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <svg viewBox="0 0 128 128" aria-hidden="true"><rect width="128" height="128" rx="28" fill="#7c6cff"/><rect x="52" y="24" width="24" height="48" rx="12" fill="#fff"/><path d="M36 72a28 28 0 0 0 56 0" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/><line x1="64" y1="100" x2="64" y2="112" stroke="#fff" stroke-width="8" stroke-linecap="round"/><line x1="48" y1="112" x2="80" y2="112" stroke="#fff" stroke-width="8" stroke-linecap="round"/></svg>
-      <div>
-        <h1>WhisperLinux</h1>
-        <p class="tagline">Free, fully offline push-to-talk dictation for Linux. Hold a hotkey, speak, release — text appears at your cursor.</p>
+  <div class="scanlines"></div>
+  <div class="shell">
+    <nav>
+      <div class="term-window">
+        <div class="term-titlebar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="term-title">whispr-linux — bash</span>
+        </div>
+        <div class="term-body">
+          <div class="nav-inner">
+            <a class="brand" href="#">
+              <span class="brand-icon">$</span>
+              <span class="brand-name"><span>whispr</span>linux</span>
+            </a>
+            <div class="nav-links">
+              <a href="#install">install</a>
+              <a href="#features">man</a>
+              <a href="#usage">usage</a>
+              <a class="btn btn-primary" href="#install">./install.sh</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-grid">
+        <div>
+          <div class="hero-intro">
+            <h1>Offline voice dictation<br>for <span class="green">Linux</span></h1>
+            <p>
+              Hold a hotkey, speak, release — transcribed text lands at your cursor.
+              Local Whisper AI, no cloud, no API keys, no account.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="downloads/whisperlinux_1.0.0_amd64.deb">
+              wget whisperlinux_1.0.0_amd64.deb
+            </a>
+            <a class="btn" href="#install">curl | bash</a>
+          </div>
+          <div class="tag-row">
+            <span class="tag on">offline</span>
+            <span class="tag on">X11</span>
+            <span class="tag on">Wayland</span>
+            <span class="tag on">MIT</span>
+            <span class="tag on">.deb</span>
+          </div>
+        </div>
+
+        <div class="term-window">
+          <div class="term-titlebar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="term-title">whisperlinux — push-to-talk demo</span>
+          </div>
+          <div class="term-body hero-output">
+            <div class="line"><span class="prompt"></span><span class="cmd">whisperlinux</span> <span class="flag">--status</span></div>
+            <div class="line ok">● recording… (Alt+Super+Shift held)</div>
+            <div class="output-block">umm so like I was thinking we should probably move the deadline to friday but I'm not totally sure yet</div>
+            <div class="line ok">● transcribing… (local whisper base.en)</div>
+            <div class="output-block result">I was thinking we should move the deadline to Friday, but I'm not totally sure yet.</div>
+            <div class="line dim">→ typed at cursor via ydotool</div>
+            <div class="line" style="margin-top:12px">
+              <span class="dim">hotkey:</span>
+              <span class="key">Alt</span> +
+              <span class="key">Super</span> +
+              <span class="key">Shift</span>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
-    <div class="cards">
-      <div class="card">
-        <h2>Ubuntu / Debian (.deb)</h2>
-        <p>Recommended for Ubuntu, Debian, Linux Mint, Pop!_OS, and derivatives.</p>
-        <a class="btn" href="downloads/whisperlinux_1.0.0_amd64.deb">Download .deb</a>
+    <section id="install">
+      <div class="section-label">// install</div>
+      <div class="section-head">
+        <h2><span class="green">$</span> apt install whisperlinux</h2>
+        <p>Ubuntu, Debian, Mint, Pop!_OS, and other Debian-based distros.</p>
       </div>
-      <div class="card">
-        <h2>Portable (.tar.gz)</h2>
-        <p>Works on any Linux distro. Includes pre-built Python environment.</p>
-        <a class="btn secondary" href="downloads/whisperlinux-1.0.0-linux-amd64.tar.gz">Download tarball</a>
+
+      <div class="term-window">
+        <div class="term-titlebar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="term-title">install.sh</span>
+        </div>
+        <div class="term-body">
+          <p class="install-note"><strong>One-line install</strong> <span class="comment"># fastest</span></p>
+          <div class="code-block">
+            <button class="copy-btn" data-copy="curl -fsSL https://whisprlinux.vercel.app/install.sh | bash">copy</button>
+            <code><span class="prompt"></span><span class="cmd">curl</span> <span class="flag">-fsSL</span> <span class="str">https://whisprlinux.vercel.app/install.sh</span> <span class="dim">|</span> <span class="cmd">bash</span></code>
+          </div>
+
+          <p class="install-note"><strong>Manual .deb install</strong></p>
+          <div class="code-block">
+            <button class="copy-btn" data-copy="sudo apt install ./whisperlinux_1.0.0_amd64.deb&#10;whisperlinux --check">copy</button>
+            <code><span class="prompt-root"></span><span class="cmd">apt</span> <span class="flag">install</span> ./whisperlinux_1.0.0_amd64.deb
+<span class="prompt"></span><span class="cmd">whisperlinux</span> <span class="flag">--check</span></code>
+          </div>
+
+          <p class="install-note">
+            After install, <strong>log out and back in</strong> once so keyboard permissions apply.
+            Then run <code>whisperlinux</code> or enable the user service:
+          </p>
+          <div class="code-block">
+            <button class="copy-btn" data-copy="systemctl --user enable --now whisperlinux.service">copy</button>
+            <code><span class="prompt"></span><span class="cmd">systemctl</span> <span class="flag">--user</span> <span class="flag">enable</span> <span class="flag">--now</span> whisperlinux.service</code>
+          </div>
+
+          <div class="download-row">
+            <a class="btn btn-primary" href="downloads/whisperlinux_1.0.0_amd64.deb">download .deb (v1.0.0)</a>
+            <span class="install-note" style="margin:0">x86_64 · deps installed automatically</span>
+          </div>
+        </div>
       </div>
-      <div class="card">
-        <h2>One-line install</h2>
-        <p>Fastest install for Ubuntu/Debian systems with curl.</p>
-        <a class="btn secondary" href="install.sh">View install script</a>
+    </section>
+
+    <section id="features">
+      <div class="section-label">// man whisperlinux</div>
+      <div class="section-head">
+        <h2><span class="green">man</span> 1 whisperlinux</h2>
+        <p>Local speech-to-text that respects how Linux actually works.</p>
+      </div>
+
+      <div class="term-window">
+        <div class="term-titlebar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="term-title">man whisperlinux</span>
+        </div>
+        <div class="term-body man-page">
+          <div class="man-name">WHISPRLINUX(1)</div>
+          <div class="man-synopsis">whisperlinux — offline push-to-talk dictation for Linux</div>
+
+          <div class="man-section">
+            <h3>Description</h3>
+            <p>
+              Whispr Linux listens for a global hotkey chord, records your voice locally,
+              transcribes with faster-whisper, and injects text at the focused cursor —
+              on both X11 and Wayland.
+            </p>
+          </div>
+
+          <div class="man-section">
+            <h3>Features</h3>
+            <ul class="man-list">
+              <li><strong>100% offline</strong> — faster-whisper runs on your CPU or NVIDIA GPU. No subscription, no telemetry.</li>
+              <li><strong>Push-to-talk</strong> — hold Alt + Super + Shift, speak, release. Text appears instantly.</li>
+              <li><strong>evdev hotkeys</strong> — reads keys at the kernel level, works across compositors and DEs.</li>
+              <li><strong>xdotool / ydotool</strong> — text injection for X11 and Wayland respectively.</li>
+              <li><strong>System tray</strong> — idle, recording, and transcribing states in your panel.</li>
+              <li><strong>Autostart</strong> — optional systemd user service for login startup.</li>
+            </ul>
+          </div>
+
+          <div class="man-section">
+            <h3>Configuration</h3>
+            <p>Config file: <span class="str">~/.config/whisperlinux/config.json</span></p>
+            <ul class="man-list">
+              <li><strong>hotkey_modifiers</strong> — default Alt+Super+Shift</li>
+              <li><strong>model_size</strong> — tiny.en, base.en, small.en, medium.en, large-v3</li>
+              <li><strong>device</strong> — cpu or cuda</li>
+              <li><strong>language</strong> — language code (default en)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="usage">
+      <div class="section-label">// quickstart</div>
+      <div class="section-head">
+        <h2><span class="green">3</span> commands to get running</h2>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div>
+            <h3>Install the package</h3>
+            <p>Run the one-liner or <code>sudo apt install ./whisperlinux_1.0.0_amd64.deb</code></p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div>
+            <h3>Log out &amp; back in</h3>
+            <p>One-time step — adds your user to the <code>input</code> group for global hotkey access.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div>
+            <h3>Hold &amp; speak</h3>
+            <p>Run <code>whisperlinux</code>, hold Alt + Super + Shift, speak, release. Done.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="cta">
+      <div class="term-window">
+        <div class="term-titlebar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="term-title">~/Downloads</span>
+        </div>
+        <div class="term-body cta-inner">
+          <h2><span class="prompt"></span><span class="cmd">whisperlinux</span> <span class="flag">--install</span><span class="cursor-blink"></span></h2>
+          <p>Free, offline, MIT licensed. Built for Linux desktops.</p>
+          <a class="btn btn-primary" href="downloads/whisperlinux_1.0.0_amd64.deb">download .deb</a>
+        </div>
       </div>
     </div>
 
-    <section>
-      <h2>Quick install</h2>
-      <h3 style="color:var(--muted);font-size:1rem;margin:16px 0 8px;">Ubuntu / Debian</h3>
-      <pre><code>curl -fsSL https://whisperlinux.org/install.sh | bash</code></pre>
-      <p style="color:var(--muted);margin:12px 0 24px;">Or download the .deb and run:</p>
-      <pre><code>sudo apt install ./whisperlinux_1.0.0_amd64.deb
-whisperlinux --check</code></pre>
-
-      <h3 style="color:var(--muted);font-size:1rem;margin:16px 0 8px;">Any Linux (tarball)</h3>
-      <pre><code>tar -xzf whisperlinux-1.0.0-linux-amd64.tar.gz
-cd whisperlinux-1.0.0-linux-amd64
-./install.sh
-whisperlinux --check</code></pre>
-    </section>
-
-    <section>
-      <h2>How to use</h2>
-      <ol>
-        <li>Log out and back in after install (required for keyboard permissions).</li>
-        <li>Run <code>whisperlinux</code> or enable autostart: <code>systemctl --user enable --now whisperlinux.service</code></li>
-        <li>Hold <strong>Alt + Super + Shift</strong>, speak, then release.</li>
-        <li>Transcribed text is typed wherever your cursor is focused.</li>
-      </ol>
-    </section>
-
-    <section>
-      <h2>Features</h2>
-      <div class="features">
-        <div class="feature"><strong>100% offline</strong>Local Whisper AI — no API keys, no cloud.</div>
-        <div class="feature"><strong>X11 &amp; Wayland</strong>Kernel-level hotkeys work everywhere.</div>
-        <div class="feature"><strong>Push-to-talk</strong>Hold hotkey to record, release to type.</div>
-        <div class="feature"><strong>System tray</strong>Visual status: idle, recording, transcribing.</div>
-      </div>
-    </section>
-
-    <section>
-      <h2>Requirements</h2>
-      <ul>
-        <li>Linux x86_64, Python 3.10+ (included in tarball / .deb setup)</li>
-        <li>Microphone</li>
-        <li><code>xdotool</code> (X11) or <code>ydotool</code> + <code>ydotoold</code> (Wayland)</li>
-        <li>User must be in the <code>input</code> group (installer handles this)</li>
-      </ul>
-    </section>
-
     <footer>
-      <p>WhisperLinux v1.0.0 · MIT License · Config: <code>~/.config/whisperlinux/config.json</code></p>
+      <span>whisprlinux v1.0.0 · MIT License</span>
+      <span class="dim">local whisper · evdev · xdotool · ydotool</span>
     </footer>
   </div>
+
+  <script>
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const text = btn.dataset.copy.replace(/&#10;/g, '\n');
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.textContent = 'copied';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'copy';
+            btn.classList.remove('copied');
+          }, 2000);
+        } catch {
+          btn.textContent = 'fail';
+        }
+      });
+    });
+  </script>
 </body>
 </html>

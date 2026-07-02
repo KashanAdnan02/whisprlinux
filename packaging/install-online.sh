@@ -3,7 +3,7 @@
 set -euo pipefail
 
 VERSION="1.0.0"
-BASE_URL="${WHISPERLINUX_URL:-https://whisperlinux.org/downloads}"
+BASE_URL="${WHISPR_LINUX_URL:-https://whisprlinux.vercel.app/downloads}"
 ARCH="amd64"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
