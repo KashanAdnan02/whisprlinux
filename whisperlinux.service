@@ -1,0 +1,14 @@
+[Unit]
+Description=WhisperLinux offline push-to-talk dictation
+After=graphical-session.target sound.target pipewire.service pulseaudio.service
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/whisperlinux
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

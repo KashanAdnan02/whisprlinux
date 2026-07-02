@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "whisperlinux"
+version = "1.0.0"
+description = "Offline push-to-talk dictation for Linux"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "WhisperLinux Contributors" }]
+keywords = ["whisper", "dictation", "speech-to-text", "linux", "offline"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: X11 Applications",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+dependencies = [
+    "faster-whisper>=1.0.0",
+    "sounddevice>=0.4.6",
+    "numpy>=1.24",
+    "evdev>=1.6.1",
+    "pystray>=0.19.5",
+    "Pillow>=10.0.0",
+]
+
+[project.scripts]
+whisperlinux = "whisperlinux.cli:main"
+
+[project.urls]
+Homepage = "https://whisperlinux.org"
+Documentation = "https://github.com/whisperlinux/whisperlinux#readme"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["whisperlinux*"]

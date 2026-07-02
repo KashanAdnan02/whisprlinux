@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhisperLinux — Offline Dictation for Linux</title>
+  <meta name="description" content="Free, offline push-to-talk dictation for Linux. Hold a hotkey, speak, get text typed anywhere.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg: #0b0d12;
+      --surface: #141824;
+      --text: #eef1f8;
+      --muted: #9aa3b5;
+      --accent: #7c6cff;
+      --accent-2: #a78bfa;
+      --border: #252b3a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(124,108,255,.25), transparent),
+                  radial-gradient(900px 500px at 90% 0%, rgba(167,139,250,.15), transparent),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+    header { display: flex; align-items: center; gap: 16px; margin-bottom: 48px; }
+    header svg { width: 48px; height: 48px; }
+    h1 { font-size: 2.4rem; letter-spacing: -0.03em; }
+    .tagline { color: var(--muted); font-size: 1.15rem; margin-top: 8px; max-width: 640px; }
+    .hero { margin: 40px 0 56px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 48px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .card h2 { font-size: 1.1rem; margin-bottom: 8px; }
+    .card p { color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; }
+    .btn {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 10px;
+      transition: transform .15s, opacity .15s;
+    }
+    .btn:hover { transform: translateY(-1px); opacity: .95; }
+    .btn.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    section { margin-bottom: 48px; }
+    section h2 { font-size: 1.4rem; margin-bottom: 16px; }
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      color: #c8d0e0;
+    }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    ol, ul { padding-left: 20px; color: var(--muted); }
+    li { margin-bottom: 8px; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .feature {
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .feature strong { display: block; color: var(--text); margin-bottom: 4px; }
+    footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <svg viewBox="0 0 128 128" aria-hidden="true"><rect width="128" height="128" rx="28" fill="#7c6cff"/><rect x="52" y="24" width="24" height="48" rx="12" fill="#fff"/><path d="M36 72a28 28 0 0 0 56 0" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/><line x1="64" y1="100" x2="64" y2="112" stroke="#fff" stroke-width="8" stroke-linecap="round"/><line x1="48" y1="112" x2="80" y2="112" stroke="#fff" stroke-width="8" stroke-linecap="round"/></svg>
+      <div>
+        <h1>WhisperLinux</h1>
+        <p class="tagline">Free, fully offline push-to-talk dictation for Linux. Hold a hotkey, speak, release — text appears at your cursor.</p>
+      </div>
+    </header>
+
+    <div class="cards">
+      <div class="card">
+        <h2>Ubuntu / Debian (.deb)</h2>
+        <p>Recommended for Ubuntu, Debian, Linux Mint, Pop!_OS, and derivatives.</p>
+        <a class="btn" href="downloads/whisperlinux_1.0.0_amd64.deb">Download .deb</a>
+      </div>
+      <div class="card">
+        <h2>Portable (.tar.gz)</h2>
+        <p>Works on any Linux distro. Includes pre-built Python environment.</p>
+        <a class="btn secondary" href="downloads/whisperlinux-1.0.0-linux-amd64.tar.gz">Download tarball</a>
+      </div>
+      <div class="card">
+        <h2>One-line install</h2>
+        <p>Fastest install for Ubuntu/Debian systems with curl.</p>
+        <a class="btn secondary" href="install.sh">View install script</a>
+      </div>
+    </div>
+
+    <section>
+      <h2>Quick install</h2>
+      <h3 style="color:var(--muted);font-size:1rem;margin:16px 0 8px;">Ubuntu / Debian</h3>
+      <pre><code>curl -fsSL https://whisperlinux.org/install.sh | bash</code></pre>
+      <p style="color:var(--muted);margin:12px 0 24px;">Or download the .deb and run:</p>
+      <pre><code>sudo apt install ./whisperlinux_1.0.0_amd64.deb
+whisperlinux --check</code></pre>
+
+      <h3 style="color:var(--muted);font-size:1rem;margin:16px 0 8px;">Any Linux (tarball)</h3>
+      <pre><code>tar -xzf whisperlinux-1.0.0-linux-amd64.tar.gz
+cd whisperlinux-1.0.0-linux-amd64
+./install.sh
+whisperlinux --check</code></pre>
+    </section>
+
+    <section>
+      <h2>How to use</h2>
+      <ol>
+        <li>Log out and back in after install (required for keyboard permissions).</li>
+        <li>Run <code>whisperlinux</code> or enable autostart: <code>systemctl --user enable --now whisperlinux.service</code></li>
+        <li>Hold <strong>Alt + Super + Shift</strong>, speak, then release.</li>
+        <li>Transcribed text is typed wherever your cursor is focused.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Features</h2>
+      <div class="features">
+        <div class="feature"><strong>100% offline</strong>Local Whisper AI — no API keys, no cloud.</div>
+        <div class="feature"><strong>X11 &amp; Wayland</strong>Kernel-level hotkeys work everywhere.</div>
+        <div class="feature"><strong>Push-to-talk</strong>Hold hotkey to record, release to type.</div>
+        <div class="feature"><strong>System tray</strong>Visual status: idle, recording, transcribing.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Requirements</h2>
+      <ul>
+        <li>Linux x86_64, Python 3.10+ (included in tarball / .deb setup)</li>
+        <li>Microphone</li>
+        <li><code>xdotool</code> (X11) or <code>ydotool</code> + <code>ydotoold</code> (Wayland)</li>
+        <li>User must be in the <code>input</code> group (installer handles this)</li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>WhisperLinux v1.0.0 · MIT License · Config: <code>~/.config/whisperlinux/config.json</code></p>
+    </footer>
+  </div>
+</body>
+</html>

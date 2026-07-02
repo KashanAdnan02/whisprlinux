@@ -1,0 +1,15 @@
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.deb
+*.tar.gz
+*.AppImage
+website/downloads/*
+!website/downloads/.gitkeep
+.cache/
+*.log
+.DS_Store

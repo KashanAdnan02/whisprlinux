@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=WhisperLinux
+Comment=Offline push-to-talk dictation
+Exec=/usr/bin/whisperlinux
+Icon=whisperlinux
+Categories=Utility;Audio;
+Keywords=whisper;dictation;speech;voice;transcription;
+StartupNotify=false
+Terminal=false

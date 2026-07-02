@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+INSTALL_DIR="/opt/whisperlinux"
+PYTHON="${INSTALL_DIR}/venv/bin/python"
+
+if [[ ! -x "$PYTHON" ]]; then
+    echo "WhisperLinux is not fully installed. Run: sudo /opt/whisperlinux/setup-venv.sh" >&2
+    exit 1
+fi
+
+_run() {
+    cd "$INSTALL_DIR"
+    exec "$PYTHON" -m whisperlinux.cli "$@"
+}
+
+if id -nG "${USER}" | grep -qw input; then
+    _run "$@"
+fi
+
+quoted=""
+for arg in "$@"; do
+    quoted+=" $(printf '%q' "$arg")"
+done
+exec sg input -c "cd '${INSTALL_DIR}' && exec '${PYTHON}' -m whisperlinux.cli${quoted}"
